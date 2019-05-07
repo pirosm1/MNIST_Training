@@ -171,7 +171,7 @@ std::vector<float> ForwardPropagator::forwardPropagation(std::vector<uint8_t> im
 
 				for (int yOffset = 0; yOffset < sizeOfFilter; yOffset++) {
 					for (int xOffset = 0; xOffset < sizeOfFilter; xOffset++) {
-						sum += unsigned(image[sizeOfInput*(y + yOffset) + x + xOffset])/255 * convolutionalLayerWeights[i][yOffset][xOffset];
+						sum += (float)unsigned(image[sizeOfInput*(y + yOffset) + x + xOffset]) / 255 * convolutionalLayerWeights[i][yOffset][xOffset];
 					}
 				}
 
