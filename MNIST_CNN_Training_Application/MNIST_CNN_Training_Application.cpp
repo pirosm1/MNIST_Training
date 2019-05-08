@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 {
 	std::ifstream trainingImageFile, trainingLabelFile;
 
-	if (argc != 3) {
+	if (argc != 5) {
 		printUsage();
 
 		return 1;
@@ -25,12 +25,18 @@ int main(int argc, char *argv[])
 
 	const std::string trainingImageFileName = argv[1];
 	const std::string trainingLabelFileName = argv[2];
-	auto reader = std::make_unique<MNISTReader>(trainingImageFileName, trainingLabelFileName);
+	const std::string testingImageFileName = argv[3];
+	const std::string testingLabelFileName = argv[4];
+	auto reader = std::make_unique<MNISTReader>();
 
-	// read images into memoery
-	std::vector<std::vector<uint8_t>> imageVector = reader->getImageVector();
-	// Read labels into memory for comparison later
-	std::vector<uint8_t> labelVector = reader->getLabelVector();
+	// read training images into memory
+	std::vector<std::vector<uint8_t>> imageVector = reader->getImageVector(trainingImageFileName);
+	// Read training labels into memory for comparison later
+	std::vector<uint8_t> labelVector = reader->getLabelVector(trainingLabelFileName);
+	// read testing images into memory
+	std::vector<std::vector<uint8_t>> testingImageVector = reader->getImageVector(testingImageFileName);
+	// Read testing labels into memory for comparison later
+	std::vector<uint8_t> testingLabelVector = reader->getLabelVector(testingLabelFileName);
 
 	const bool verbose = false;
 
@@ -73,22 +79,28 @@ int main(int argc, char *argv[])
 	for (int i = 0; i < numberOfEpochs; i++) {
 
 		auto epoch_start = std::chrono::steady_clock::now();
-		std::cout << "Epoch " << i << " started:" << std::endl << std::endl;
+		std::cout << "Epoch " << i << " Training started:" << std::endl << std::endl;
 
 		int correct = 0;
 		long long totalBackPropagationTime = 0;
 		for (int j = 0; j < imageVector.size(); j++) {
 			std::vector<float> outputs = fp->forwardPropagation(imageVector[j]);
-			std::cout << "Epoch: " << i << "\tDatapoint #: " << j << std::endl;
-			std::cout << "Answer: " << unsigned(labelVector[j]) << "\tPrediction: " << maxIndex(outputs) << std::endl;
-			for (int z = 0; z < numberOfOutputs; z++)
-				std::cout << z << ": " << outputs[z] << " ";
-			std::cout << std::endl;
+
+			if (verbose) {
+				std::cout << "Epoch: " << i << "\tDatapoint #: " << j << std::endl;
+				std::cout << "Answer: " << unsigned(labelVector[j]) << "\tPrediction: " << maxIndex(outputs) << std::endl;
+
+				for (int z = 0; z < numberOfOutputs; z++)
+					std::cout << z << ": " << outputs[z] << " ";
+				std::cout << std::endl;
+			}
 			
 			if (unsigned(labelVector[j]) == maxIndex(outputs))
 				correct++;
 
-			std::cout << correct << "/" << (j + 1) << " - " << (float)correct / (j + 1) * 100 << "% correct" << std::endl;
+			if (verbose) {
+				std::cout << correct << "/" << (j + 1) << " - " << (float)correct / (j + 1) * 100 << "% correct" << std::endl;
+			}
 
 			bp->setConvolutionalLayerWeights(fp->getConvolutionalLayerWeights());
 			bp->setConvolutionalLayerBases(fp->getConvolutionalLayerBases());
@@ -105,9 +117,12 @@ int main(int argc, char *argv[])
 
 			long long time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 			totalBackPropagationTime += time;
-			std::cout << "Back propogation completed in (ms): " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
-			std::cout << "Average time (ms): " << totalBackPropagationTime / (j + 1) << std::endl;
-			std::cout << std::endl;
+
+			if (verbose) {
+				std::cout << "Back propogation completed in (ms): " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
+				std::cout << "Average time (ms): " << totalBackPropagationTime / (j + 1) << std::endl;
+				std::cout << std::endl;
+			}
 
 			fp->setConvolutionalLayerWeights(bp->getNewConvolutionalLayerWeights());
 			fp->setConvolutionalLayerBases(bp->getNewConvolutionalLayerBases());
@@ -116,6 +131,7 @@ int main(int argc, char *argv[])
 			fp->setOutputLayerWeights(bp->getNewOutputLayerWeights());
 			fp->setOutputLayerBases(bp->getNewOutputLayerBases());
 		}
+
 		// print to weight file
 		std::ostringstream fileName;
 		fileName << "weight_values_" << i << ".txt";
@@ -126,9 +142,23 @@ int main(int argc, char *argv[])
 		}
 
 		auto epoch_end = std::chrono::steady_clock::now();
-		std::cout << "Epoch " << i << " Finished: " << (float)correct / imageVector.size() * 100 << "% correct" << std::endl;
-		std::cout << "Seconds Elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(epoch_end - epoch_start).count() << std::endl << std::endl;
+		std::cout << "Epoch " << i << " Training Finished: " << (float)correct / imageVector.size() * 100 << "% correct" << std::endl;
+		std::cout << "Seconds Elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(epoch_end - epoch_start).count() << std::endl;
 		std::cout << "Average time (ms): " << totalBackPropagationTime / imageVector.size() << std::endl;
+		std::cout << std::endl;
+
+
+		int testsCorrect = 0;
+		// Test CNN at the end of each epoch
+		std::cout << "Epoch " << i << " Testing Starting: " << std::endl;
+		for (int j = 0; j < testingImageVector.size(); j++) {
+			std::vector<float> outputs = fp->forwardPropagation(testingImageVector[j]);
+
+			if (unsigned(testingLabelVector[j]) == maxIndex(outputs))
+				testsCorrect++;
+		}
+		std::cout << "Epoch " << i << " Testing Finished: " << (float)testsCorrect / testingImageVector.size() * 100 << "% correct" << std::endl;
+		std::cout << std::endl;
 	}
 
 	return 0;
@@ -138,7 +168,7 @@ void printUsage() {
 	using namespace std;
 
 	cout << "Usage:" << endl;
-	cout << "\tprog <path-to-training-image-ubyte-file> <path-to-training-label-ubyte-file>" << endl;
+	cout << "\tprog <path-to-training-image-ubyte-file> <path-to-training-label-ubyte-file> <path-to-testing-image-ubyte-file> <path-to-testing-label-ubyte-file>" << endl;
 }
 
 void printTestImage(std::vector<uint8_t> image) {

@@ -6,9 +6,6 @@
 
 class MNISTReader {
 private:
-	std::string trainingImageFilename;
-	std::string trainingLabelFilename;
-
 	inline uint32_t readHeader(const std::unique_ptr<char[]>& buffer, size_t position) {
 		auto header = reinterpret_cast<uint32_t*>(buffer.get());
 
@@ -65,10 +62,10 @@ private:
 		return buffer;
 	}
 public:
-	MNISTReader(std::string, std::string);
-
-	std::vector<std::vector<uint8_t>> getImageVector();
-
-	std::vector<uint8_t> getLabelVector();
+	MNISTReader();
 	~MNISTReader();
+
+	std::vector<std::vector<uint8_t>> getImageVector(std::string fileName);
+
+	std::vector<uint8_t> getLabelVector(std::string fileName);
 };

@@ -1,14 +1,10 @@
 #include "MNISTReader.h"
 
-MNISTReader::MNISTReader(std::string imageFilename, std::string labelFilename)
-{
-	this->trainingImageFilename = imageFilename;
-	this->trainingLabelFilename = labelFilename;
-}
+MNISTReader::MNISTReader() {}
 
-std::vector<std::vector<uint8_t>> MNISTReader::getImageVector() {
+std::vector<std::vector<uint8_t>> MNISTReader::getImageVector(std::string fileName) {
 
-	auto buffer = readMNISTFile(this->trainingImageFilename, 0x803);
+	auto buffer = readMNISTFile(fileName, 0x803);
 
 	if (!buffer) {
 		return {};
@@ -37,8 +33,8 @@ std::vector<std::vector<uint8_t>> MNISTReader::getImageVector() {
 	return images;
 }
 
-std::vector<uint8_t> MNISTReader::getLabelVector() {
-	auto buffer = readMNISTFile(this->trainingLabelFilename, 0x801);
+std::vector<uint8_t> MNISTReader::getLabelVector(std::string fileName) {
+	auto buffer = readMNISTFile(fileName, 0x801);
 
 	if (!buffer) {
 		return {};
@@ -61,6 +57,4 @@ std::vector<uint8_t> MNISTReader::getLabelVector() {
 	return labels;
 }
 
-MNISTReader::~MNISTReader()
-{
-}
+MNISTReader::~MNISTReader() {}
