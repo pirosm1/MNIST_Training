@@ -32,6 +32,8 @@ int main(int argc, char *argv[])
 	// Read labels into memory for comparison later
 	std::vector<uint8_t> labelVector = reader->getLabelVector();
 
+	const bool verbose = false;
+
 	const int sizeOfInput = 28;
 	const int sizeOfFilter = 5;
 	const int sizeOfFeature = 24;
@@ -74,6 +76,7 @@ int main(int argc, char *argv[])
 		std::cout << "Epoch " << i << " started:" << std::endl << std::endl;
 
 		int correct = 0;
+		long long totalBackPropagationTime = 0;
 		for (int j = 0; j < imageVector.size(); j++) {
 			std::vector<float> outputs = fp->forwardPropagation(imageVector[j]);
 			std::cout << "Epoch: " << i << "\tDatapoint #: " << j << std::endl;
@@ -85,7 +88,7 @@ int main(int argc, char *argv[])
 			if (unsigned(labelVector[j]) == maxIndex(outputs))
 				correct++;
 
-			std::cout << correct << "/" << imageVector.size() << " - " << (float)correct / imageVector.size() * 100 << "% correct" << std::endl;
+			std::cout << correct << "/" << (j + 1) << " - " << (float)correct / (j + 1) * 100 << "% correct" << std::endl;
 
 			bp->setConvolutionalLayerWeights(fp->getConvolutionalLayerWeights());
 			bp->setConvolutionalLayerBases(fp->getConvolutionalLayerBases());
@@ -97,10 +100,14 @@ int main(int argc, char *argv[])
 			bp->setOutputLayerBases(fp->getOutputLayerBases());
 
 			auto start = std::chrono::steady_clock::now();
-			bp->backwardPropagation(imageVector[j], outputs, labelVector[j]);
+			bp->backwardPropagation(imageVector[j], outputs, labelVector[j], verbose);
 			auto end = std::chrono::steady_clock::now();
 
-			std::cout << "Back propogation completed in: " << std::chrono::duration_cast<std::chrono::seconds>(end - start).count() << " seconds" << std::endl << std::endl;
+			long long time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+			totalBackPropagationTime += time;
+			std::cout << "Back propogation completed in (ms): " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << std::endl;
+			std::cout << "Average time (ms): " << totalBackPropagationTime / (j + 1) << std::endl;
+			std::cout << std::endl;
 
 			fp->setConvolutionalLayerWeights(bp->getNewConvolutionalLayerWeights());
 			fp->setConvolutionalLayerBases(bp->getNewConvolutionalLayerBases());
@@ -121,6 +128,7 @@ int main(int argc, char *argv[])
 		auto epoch_end = std::chrono::steady_clock::now();
 		std::cout << "Epoch " << i << " Finished: " << (float)correct / imageVector.size() * 100 << "% correct" << std::endl;
 		std::cout << "Seconds Elapsed: " << std::chrono::duration_cast<std::chrono::seconds>(epoch_end - epoch_start).count() << std::endl << std::endl;
+		std::cout << "Average time (ms): " << totalBackPropagationTime / imageVector.size() << std::endl;
 	}
 
 	return 0;

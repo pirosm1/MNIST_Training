@@ -277,7 +277,6 @@ void ForwardPropagator::printWeightValues(std::ostream &output, bool verbose = f
 			output << "Feature " << i << std::endl;
 		output << convolutionalLayerBases[i] << std::endl;
 	}
-	output << std::endl;
 
 	// Print out fully connected layer weights
 	if (verbose)
@@ -296,7 +295,6 @@ void ForwardPropagator::printWeightValues(std::ostream &output, bool verbose = f
 			output << std::endl;
 		}
 	}
-	output << std::endl;
 
 	// Print out fully connected layer bases
 	if (verbose)
@@ -306,28 +304,23 @@ void ForwardPropagator::printWeightValues(std::ostream &output, bool verbose = f
 			output << "FullyConnectedNode " << i << std::endl;
 		output << fullyConnectedLayerBases[i] << std::endl;
 	}
-	output << std::endl;
 
 	// Print out output weights
 	if (verbose)
 		output << "Output Weights" << std::endl;
-	for (int i = 0; i < numberOfFeatures; i++) {
-		if (verbose)
-			output << "Feature " << i << std::endl;
-		for (auto&& y : outputLayerWeights)
-			for (auto&& x : y)
-				output << x << " ";
-		output << std::endl;
-	}
+	else
+		output << numberOfOutputs << std::endl;
+	for (auto&& y : outputLayerWeights)
+		for (auto&& x : y)
+			output << x << " ";
 	output << std::endl;
 
 	// Print out outputs bases
 	if (verbose)
 		output << "Output Bases" << std::endl;
-	for (int i = 0; i < numberOfFeatures; i++) {
+	for (int i = 0; i < numberOfOutputs; i++) {
 		if (verbose)
 			output << "Feature " << i << std::endl;
 		output << outputLayerBases[i] << std::endl;
 	}
-	output << std::endl;
 }

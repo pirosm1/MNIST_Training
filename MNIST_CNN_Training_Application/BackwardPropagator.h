@@ -49,7 +49,7 @@ public:
 	std::vector<std::vector<float>> getNewOutputLayerWeights();
 	std::vector<float> getNewOutputLayerBases();
 
-	void backwardPropagation(std::vector<uint8_t> image, std::vector<float>, int truth);
+	void backwardPropagation(std::vector<uint8_t> image, std::vector<float>, int truth, bool verbose);
 
 private:
 	float learningRate;
